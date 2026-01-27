@@ -39,6 +39,8 @@ export default function App() {
         return <MenuScreen navigate={navigateTo} />;
       case 'NewFlexibleExpense':
         return <NewFlexibleExpenseScreen onBack={goBack} />;
+      case 'WeeklyVariables':
+        return <WeeklyVariablesScreen onBack={goBack} />;  
       case 'AnnualOverview':
         return <AnnualOverviewScreen onBack={goBack} />;
       case 'BudgetHub':
@@ -107,7 +109,7 @@ const MenuScreen = ({ navigate }) => {
             highlight 
             onPress={() => navigate('NewFlexibleExpense')} 
           />
-          <SubMenuItem label="Weekly Variables (editable)" onPress={() => {}} />
+          <SubMenuItem label="Weekly Variables (editable)" onPregbnss={() => navigate('WeeklyVariables')} />
           <SubMenuItem label="Monthly Summary" onPress={() => {}} />
         </Accordion>
 
@@ -297,6 +299,72 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
           cursor: 'pointer'
         }}>
           Save Expense
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const WeeklyVariablesScreen = ({ onBack }) => {
+  // Initial state with some default weekly budget items
+  const [variables, setVariables] = useState([
+    { id: 1, label: 'Groceries', amount: '150.00' },
+    { id: 2, label: 'Transport', amount: '50.00' },
+    { id: 3, label: 'Entertainment', amount: '100.00' },
+    { id: 4, label: 'Coffee/Snacks', amount: '25.00' },
+  ]);
+
+  const handleChange = (id, text) => {
+    setVariables(variables.map(item => 
+      item.id === id ? { ...item, amount: text } : item
+    ));
+  };
+
+  return (
+    <div style={{ minHeight: '100vh' }}>
+      <ScreenHeader title="Weekly Variables" onBack={onBack} />
+      
+      <div style={{ padding: '20px' }}>
+        <p style={{ color: COLORS.secondary, marginBottom: '20px', fontSize: '14px' }}>
+          Adjust your expected weekly spending limits here.
+        </p>
+
+        {variables.map((item) => (
+          <div key={item.id} style={{ marginBottom: '20px' }}>
+            <label style={{ color: COLORS.secondary, marginBottom: '8px', fontSize: '14px', display: 'block' }}>
+              {item.label} (€)
+            </label>
+            <input 
+              type="number"
+              value={item.amount}
+              onChange={(e) => handleChange(item.id, e.target.value)}
+              style={{
+                backgroundColor: COLORS.inputBg,
+                color: COLORS.primary,
+                padding: '15px',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                width: '100%',
+                fontSize: '16px',
+                outline: 'none'
+              }}
+            />
+          </div>
+        ))}
+
+        <button style={{
+          backgroundColor: COLORS.accent,
+          padding: '15px',
+          borderRadius: '10px',
+          border: 'none',
+          width: '100%',
+          color: '#FFF',
+          fontWeight: 'bold',
+          fontSize: '16px',
+          marginTop: '10px',
+          cursor: 'pointer'
+        }}>
+          Save Changes
         </button>
       </div>
     </div>
