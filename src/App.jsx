@@ -197,7 +197,35 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
   const [category, setCategory] = useState('Food');
   const [expenseName, setExpenseName] = useState('');
   const [amount, setAmount] = useState('');
-  
+
+  const handleSave = () => {
+    // 1. Validation: Don't save if empty
+    if (!expenseName || !amount) {
+      alert("Please enter a name and amount!");
+      return;
+    }
+  / 2. Create the expense object
+    const newExpense = {
+      id: Date.now(), // Unique ID based on time
+      name: expenseName,
+      amount: parseFloat(amount),
+      category: category,
+      date: new Date().toLocaleDateString()
+    };
+
+    // 3. Save to Local Storage (Browser Memory)
+    // Get existing expenses or start with empty list
+    const existingExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
+    // Add new expense to the list
+    const updatedExpenses = [...existingExpenses, newExpense];
+    // Save back to storage
+    localStorage.setItem('myExpenses', JSON.stringify(updatedExpenses));
+
+    // 4. Success feedback
+    alert(`Saved: ${expenseName} for €${amount}`);
+    onBack(); // Go back to menu
+  };
+  // -------------------------------------
   return (
     <div style={{ minHeight: '100vh' }}>
       <ScreenHeader title="New Expense" onBack={onBack} />
