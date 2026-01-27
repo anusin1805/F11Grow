@@ -401,8 +401,25 @@ const WeeklyVariablesScreen = ({ onBack }) => {
 
 const AnnualOverviewScreen = ({ onBack }) => {
   const data = [40, 65, 30, 85, 50, 70];
+  const [totalSpent, setTotalSpent] = useState(0);
+  
+  // 2. Load data when the screen opens
+  React.useEffect(() => {
+    // Get the list from memory
+    const savedExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
+    
+    // Calculate the sum of all amounts
+    const sum = savedExpenses.reduce((acc, current) => acc + current.amount, 0);
+    
+    // Update the state
+    setTotalSpent(sum);
+  }, []);
+   
+  // Placeholder data for the chart (visual only for now)
+  const chartData = [40, 65, 30, 85, 50, 70];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-
+  
+  
   return (
     <div style={{ minHeight: '100vh' }}>
       <ScreenHeader title="Annual Overview" onBack={onBack} />
@@ -414,12 +431,13 @@ const AnnualOverviewScreen = ({ onBack }) => {
         borderRadius: '16px'
       }}>
         <h3 style={{ color: COLORS.primary, fontSize: '16px', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-          Total Expenses (Aggregated)
+          Spending Trend
         </h3>
         <p style={{ color: COLORS.secondary, fontSize: '12px', marginBottom: '20px' }}>
-          Fixed + Variable
+          Last 6 Months
         </p>
         
+        {/* Chart Bars */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -427,7 +445,7 @@ const AnnualOverviewScreen = ({ onBack }) => {
           height: '200px',
           gap: '8px'
         }}>
-          {data.map((h, i) => (
+          {chartData.map((h, i) => (
             <div key={i} style={{
               display: 'flex',
               flexDirection: 'column',
@@ -448,6 +466,7 @@ const AnnualOverviewScreen = ({ onBack }) => {
         </div>
       </div>
 
+      {/* Dynamic Total Display */}
       <div style={{
         margin: '0 20px',
         padding: '20px',
@@ -456,14 +475,15 @@ const AnnualOverviewScreen = ({ onBack }) => {
         textAlign: 'center'
       }}>
         <p style={{ color: COLORS.secondary, fontSize: '14px', margin: 0 }}>Year to Date</p>
+        
+        {/* THIS SHOWS YOUR REAL TOTAL NOW */}
         <p style={{ color: COLORS.primary, fontSize: '24px', fontWeight: 'bold', margin: '5px 0 0 0' }}>
-          € 14,250.00
+          € {totalSpent.toFixed(2)}
         </p>
       </div>
     </div>
   );
 };
-
 const ScreenHeader = ({ title, onBack }) => (
   <div style={{
     display: 'flex',
