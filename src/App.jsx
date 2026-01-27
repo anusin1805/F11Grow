@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronRight, ArrowLeft, Settings, Camera, Mic, PiggyBank, BarChart3, Wallet, MessageSquare, User, Globe } from 'lucide-react';
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  ChevronRight, 
+  ArrowLeft, 
+  Settings, 
+  Camera, 
+  Mic, 
+  PiggyBank, 
+  BarChart3, 
+  Wallet, 
+  MessageSquare, 
+  User, 
+  Globe 
+} from 'lucide-react';
 
 const COLORS = {
   bg: '#050505',
