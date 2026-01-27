@@ -204,7 +204,7 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
       alert("Please enter a name and amount!");
       return;
     }
-  / 2. Create the expense object
+  // 2. Create the expense object
     const newExpense = {
       id: Date.now(), // Unique ID based on time
       name: expenseName,
