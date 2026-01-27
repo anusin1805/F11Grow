@@ -109,7 +109,7 @@ const MenuScreen = ({ navigate }) => {
             highlight 
             onPress={() => navigate('NewFlexibleExpense')} 
           />
-          <SubMenuItem label="Weekly Variables (editable)" onPregbnss={() => navigate('WeeklyVariables')} />
+          <SubMenuItem label="Weekly Variables (editable)" onPress={() => navigate('WeeklyVariables')} />
           <SubMenuItem label="Monthly Summary" onPress={() => {}} />
         </Accordion>
 
