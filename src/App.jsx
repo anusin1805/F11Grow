@@ -18,7 +18,11 @@ import {
   AlertCircle,
   Phone,
   Mail,
-  Send
+  Send,
+  Shield,
+  Upload,
+  CreditCard,
+  Users
 } from 'lucide-react';
 
 // --- COLOR PALETTE ---
@@ -60,6 +64,8 @@ export default function App() {
         return <TalkToUsScreen onBack={goBack} />;
       case 'Dashboard':
         return <DashboardScreen onBack={goBack} />;
+      case 'Profile':
+        return <ProfileScreen onBack={goBack} />;
       default:
         return <MenuScreen navigate={navigateTo} />;
     }
@@ -156,7 +162,11 @@ const MenuScreen = ({ navigate }) => {
         
         <div style={{ height: '1px', backgroundColor: '#222', margin: '20px 0' }} />
 
-        <MenuItem icon={<User size={22} color={COLORS.secondary} />} label="Profile" />
+        <MenuItem 
+          icon={<User size={22} color={COLORS.secondary} />} 
+          label="Profile & Subscription" 
+          onPress={() => navigate('Profile')}
+        />
         <MenuItem icon={<Globe size={22} color={COLORS.secondary} />} label="Language: English" />
       </div>
 
@@ -187,6 +197,223 @@ const MenuScreen = ({ navigate }) => {
   );
 };
 
+// --- SCREEN: PROFILE & SUBSCRIPTIONS (NEW!) ---
+const ProfileScreen = ({ onBack }) => {
+  // Mock Auth State
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authStep, setAuthStep] = useState(1); // 1: Input, 2: OTP
+  const [contact, setContact] = useState('');
+  const [otp, setOtp] = useState('');
+  
+  // Profile State
+  const [profile, setProfile] = useState({
+    name: 'Anupama Singh',
+    gender: 'Female',
+    image: null,
+    plan: 'Free'
+  });
+
+  const handleLogin = () => {
+    if (authStep === 1 && contact) {
+      setAuthStep(2); // Simulate sending OTP
+    } else if (authStep === 2 && otp) {
+      setIsLoggedIn(true); // Login success
+    } else {
+      alert("Please enter valid details.");
+    }
+  };
+
+  const handleImageUpload = () => {
+    // Simulating file upload
+    alert("Image upload dialog would open here.");
+    setProfile({...profile, image: 'https://via.placeholder.com/100'});
+  };
+
+  const subscribe = (planName) => {
+    alert(`Redirecting to payment for ${planName}...`);
+    setProfile({...profile, plan: planName});
+  };
+
+  // --- RENDER LOGIN VIEW ---
+  if (!isLoggedIn) {
+    return (
+      <div style={{ minHeight: '100vh' }}>
+        <ScreenHeader title="Login / Register" onBack={onBack} />
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+            <Shield size={60} color={COLORS.accent} style={{ marginBottom: '20px' }} />
+            <h2 style={{ margin: 0 }}>Welcome to FinWise</h2>
+            <p style={{ color: COLORS.secondary }}>Secure Financial Tracking</p>
+          </div>
+
+          {authStep === 1 ? (
+            <>
+              <label style={{ color: COLORS.secondary, fontSize: '14px' }}>Email or Mobile Number</label>
+              <input 
+                placeholder="e.g. user@example.com" 
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+                style={styles.input}
+              />
+              <button onClick={handleLogin} style={styles.button}>Get OTP (2FA)</button>
+            </>
+          ) : (
+            <>
+              <div style={{ backgroundColor: '#2a2a2a', padding: '15px', borderRadius: '8px', marginBottom: '10px' }}>
+                <p style={{ color: COLORS.success, fontSize: '14px', margin: 0 }}>
+                  <CheckCircle2 size={14} style={{ display: 'inline', marginRight: '5px' }} />
+                  OTP Sent to {contact}
+                </p>
+              </div>
+              <label style={{ color: COLORS.secondary, fontSize: '14px' }}>Enter 4-Digit OTP</label>
+              <input 
+                placeholder="0 0 0 0" 
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                style={{ ...styles.input, textAlign: 'center', letterSpacing: '5px', fontSize: '20px' }}
+              />
+              <button onClick={handleLogin} style={styles.button}>Verify & Login</button>
+              <button 
+                onClick={() => setAuthStep(1)} 
+                style={{ background: 'none', border: 'none', color: COLORS.secondary, marginTop: '10px', cursor: 'pointer' }}
+              >
+                Change Number?
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER PROFILE VIEW (LOGGED IN) ---
+  return (
+    <div style={{ minHeight: '100vh' }}>
+      <ScreenHeader title="My Profile" onBack={onBack} />
+      
+      <div style={{ padding: '20px' }}>
+        
+        {/* Profile Card */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '20px', 
+          backgroundColor: COLORS.card, 
+          padding: '20px', 
+          borderRadius: '16px',
+          marginBottom: '25px'
+        }}>
+          <div 
+            onClick={handleImageUpload}
+            style={{ 
+              width: '80px', 
+              height: '80px', 
+              borderRadius: '50%', 
+              backgroundColor: '#333', 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center',
+              cursor: 'pointer',
+              border: `2px dashed ${COLORS.secondary}`,
+              overflow: 'hidden'
+            }}
+          >
+            {profile.image ? (
+              <img src={profile.image} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <Upload size={24} color={COLORS.secondary} />
+            )}
+          </div>
+          <div>
+            <h3 style={{ margin: '0 0 5px 0' }}>{profile.name}</h3>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => setProfile({...profile, gender: 'Male'})}
+                style={{ 
+                  padding: '5px 10px', 
+                  borderRadius: '15px', 
+                  border: `1px solid ${profile.gender === 'Male' ? COLORS.accent : '#444'}`,
+                  background: profile.gender === 'Male' ? COLORS.accent : 'transparent',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >Male</button>
+              <button 
+                onClick={() => setProfile({...profile, gender: 'Female'})}
+                style={{ 
+                  padding: '5px 10px', 
+                  borderRadius: '15px', 
+                  border: `1px solid ${profile.gender === 'Female' ? COLORS.accent : '#444'}`,
+                  background: profile.gender === 'Female' ? COLORS.accent : 'transparent',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+              >Female</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Subscription Plans */}
+        <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>Subscription Plans</h3>
+        
+        {/* Individual Plan */}
+        <div style={{ backgroundColor: COLORS.card, padding: '20px', borderRadius: '16px', marginBottom: '15px', border: '1px solid #333' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <User size={20} color={COLORS.accent} />
+              <span style={{ fontWeight: 'bold' }}>Individual Pro</span>
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 'bold' }}>$5<span style={{ fontSize: '12px', color: COLORS.secondary }}>/mo</span></span>
+          </div>
+          <ul style={{ color: COLORS.secondary, fontSize: '13px', paddingLeft: '20px', marginBottom: '15px' }}>
+            <li>Unlimited Expense Tracking</li>
+            <li>Advanced Charts & Trends</li>
+            <li>Cloud Sync</li>
+          </ul>
+          <button onClick={() => subscribe('Individual')} style={{ ...styles.button, backgroundColor: '#333' }}>Subscribe Now</button>
+        </div>
+
+        {/* Family Plan */}
+        <div style={{ backgroundColor: 'rgba(94, 92, 230, 0.1)', padding: '20px', borderRadius: '16px', marginBottom: '25px', border: `1px solid ${COLORS.accent}` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Users size={20} color={COLORS.warning} />
+              <span style={{ fontWeight: 'bold' }}>Family Pack (4 Users)</span>
+            </div>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: COLORS.warning }}>$16<span style={{ fontSize: '12px', color: COLORS.secondary }}>/mo</span></span>
+          </div>
+          <p style={{ color: COLORS.success, fontSize: '12px', margin: '0 0 10px 0', fontWeight: 'bold' }}>Save 20% with Family Discount!</p>
+          <ul style={{ color: COLORS.secondary, fontSize: '13px', paddingLeft: '20px', marginBottom: '15px' }}>
+            <li>Everything in Pro</li>
+            <li>Shared Family Budget</li>
+            <li>Up to 4 Member Profiles</li>
+          </ul>
+          <button onClick={() => subscribe('Family')} style={styles.button}>Upgrade to Family</button>
+        </div>
+
+        {/* Consultation Offers */}
+        <div style={{ backgroundColor: '#1F1F22', padding: '15px', borderRadius: '12px' }}>
+          <h4 style={{ margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <MessageSquare size={16} color={COLORS.secondary} /> 
+            Consultation Offers
+          </h4>
+          <p style={{ fontSize: '13px', color: COLORS.secondary, lineHeight: '1.4' }}>
+            Premium subscribers get <strong>20% OFF</strong> on all expert financial consultations via the "Talk to Us" section.
+          </p>
+        </div>
+        
+        <button onClick={() => setIsLoggedIn(false)} style={{ marginTop: '30px', background: 'none', border: 'none', color: COLORS.danger, cursor: 'pointer', width: '100%' }}>
+          Log Out
+        </button>
+
+      </div>
+    </div>
+  );
+};
+
 // --- SCREEN 2: DASHBOARD (UPDATED) ---
 const DashboardScreen = ({ onBack }) => {
   const [financials, setFinancials] = useState({ fixed: 0, variable: 0, subs: 0 });
@@ -196,12 +423,11 @@ const DashboardScreen = ({ onBack }) => {
     const expenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
     const varTotal = expenses.reduce((acc, curr) => acc + curr.amount, 0);
 
-    // 2. Calculate Subs (Static mock for now + saved)
-    // In a real app, this would come from the subs screen storage
-    const subsTotal = 12.99 + 9.99 + 45.00; // Netflix, Spotify, Gym
+    // 2. Calculate Subs (Static mock + saved)
+    const subsTotal = 12.99 + 9.99 + 45.00; 
 
-    // 3. Calculate Fixed (Static mock for Rent/Loans)
-    const fixedTotal = 1200.00; // Placeholder for Rent/Car
+    // 3. Calculate Fixed (Static mock)
+    const fixedTotal = 1200.00; 
 
     setFinancials({ fixed: fixedTotal, variable: varTotal, subs: subsTotal });
   }, []);
@@ -288,7 +514,7 @@ const DashboardScreen = ({ onBack }) => {
   );
 };
 
-// --- SCREEN 3: TALK TO US (NEW!) ---
+// --- SCREEN 3: TALK TO US ---
 const TalkToUsScreen = ({ onBack }) => {
   const [email, setEmail] = useState('');
   const [comment, setComment] = useState('');
