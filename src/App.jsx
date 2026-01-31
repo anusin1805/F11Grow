@@ -12,9 +12,13 @@ import {
   Wallet, 
   MessageSquare, 
   User, 
-  Globe 
+  Globe,
+  Bell,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 
+// --- COLOR PALETTE ---
 const COLORS = {
   bg: '#050505',
   card: '#121212',
@@ -24,9 +28,11 @@ const COLORS = {
   accent: '#5E5CE6',
   danger: '#FF453A',
   success: '#32D74B',
+  warning: '#FFD60A',
   inputBg: '#1C1C1E',
 };
 
+// --- MAIN APP COMPONENT ---
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('Menu');
   
@@ -44,7 +50,9 @@ export default function App() {
       case 'AnnualOverview':
         return <AnnualOverviewScreen onBack={goBack} />;
       case 'BudgetHub':
-        return <PlaceholderScreen title="Budget Hub" onBack={goBack} />;
+        return <BudgetHubScreen onBack={goBack} />;
+      case 'FullScopeAnalysis':
+        return <FullScopeAnalysisScreen onBack={goBack} />;
       case 'Dashboard':
         return <PlaceholderScreen title="Dashboard" onBack={goBack} />;
       default:
@@ -64,6 +72,7 @@ export default function App() {
   );
 }
 
+// --- SCREEN 1: MENU ---
 const MenuScreen = ({ navigate }) => {
   const [expandedSection, setExpandedSection] = useState('Variable Expenses');
 
@@ -109,8 +118,7 @@ const MenuScreen = ({ navigate }) => {
             highlight 
             onPress={() => navigate('NewFlexibleExpense')} 
           />
-          <SubMenuItem label="Weekly Variables (editable)" onPress={() => navigate('WeeklyVariables')} />
-          <SubMenuItem label="Monthly Summary" onPress={() => {}} />
+          <SubMenuItem label="Weekly Variables (Editable)" onPress={() => navigate('WeeklyVariables')} />
         </Accordion>
 
         {/* Annual Overview */}
@@ -120,44 +128,20 @@ const MenuScreen = ({ navigate }) => {
           onPress={() => navigate('AnnualOverview')} 
         />
 
-        {/* Fixed Expenses */}
-        <Accordion 
-          title="Fixed Expenses" 
-          isOpen={expandedSection === 'Fixed Expenses'}
-          onToggle={() => toggleSection('Fixed Expenses')}
-        >
-          <div style={{ padding: '0 5px' }}>
-            {['TV Subscription', 'Gym Membership', 'Home Rent / Loan', 'Car Fuel', 'Grocery'].map((item, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '12px 0',
-                borderBottom: '1px solid #222'
-              }}>
-                <span style={{ color: '#ccc', fontSize: '14px' }}>{item}</span>
-                <span style={{ color: '#666', fontSize: '14px' }}>€--.--</span>
-              </div>
-            ))}
-            <button style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'none',
-              border: 'none',
-              color: COLORS.accent,
-              padding: '15px 0',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}>
-              <span style={{ fontSize: '20px' }}>+</span>
-              <span>Add New Fixed Expense</span>
-            </button>
-          </div>
-        </Accordion>
+        {/* Full Scope Analysis (Subscriptions) */}
+        <MenuItem 
+          icon={<AlertCircle size={22} color={COLORS.secondary} />}
+          label="Full-Scope Analysis (Subs)" 
+          onPress={() => navigate('FullScopeAnalysis')} 
+        />
 
-        {/* Other Menu Items */}
-        <MenuItem icon={<BarChart3 size={22} color={COLORS.secondary} />} label="Full-Scope Analysis" />
-        <MenuItem icon={<Wallet size={22} color={COLORS.secondary} />} label="Budget Hub" onPress={() => navigate('BudgetHub')} />
+        {/* Budget Hub */}
+        <MenuItem 
+          icon={<Wallet size={22} color={COLORS.secondary} />} 
+          label="Budget Hub" 
+          onPress={() => navigate('BudgetHub')} 
+        />
+        
         <MenuItem icon={<MessageSquare size={22} color={COLORS.secondary} />} label="Talk to Us" />
         
         <div style={{ height: '1px', backgroundColor: '#222', margin: '20px 0' }} />
@@ -193,140 +177,250 @@ const MenuScreen = ({ navigate }) => {
   );
 };
 
-const NewFlexibleExpenseScreen = ({ onBack }) => {
-  const [category, setCategory] = useState('Food');
-  const [expenseName, setExpenseName] = useState('');
-  const [amount, setAmount] = useState('');
-  
-  const handleSave = () => {
-    if (!expenseName || !amount) {
-      alert("Please enter a name and amount!");
-      return;
-    }
+// --- SCREEN 2: BUDGET HUB (NEW!) ---
+const BudgetHubScreen = ({ onBack }) => {
+  const [budgets, setBudgets] = useState(() => {
+    const saved = localStorage.getItem('myBudgets');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, category: 'Food', limit: 300, spent: 150 },
+      { id: 2, category: 'Transport', limit: 100, spent: 80 },
+    ];
+  });
 
-    const newExpense = {
+  const [newCategory, setNewCategory] = useState('');
+  const [newLimit, setNewLimit] = useState('');
+  const [newSpent, setNewSpent] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAddBudget = () => {
+    if(!newCategory || !newLimit) return;
+    const newBudget = {
       id: Date.now(),
-      name: expenseName,
-      amount: parseFloat(amount),
-      category: category,
-      date: new Date().toLocaleDateString()
+      category: newCategory,
+      limit: parseFloat(newLimit),
+      spent: parseFloat(newSpent) || 0
     };
-
-    const existingExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
-    const updatedExpenses = [...existingExpenses, newExpense];
-    localStorage.setItem('myExpenses', JSON.stringify(updatedExpenses));
-
-    alert(`Saved: ${expenseName} for €${amount}`);
-    onBack();
+    const updated = [...budgets, newBudget];
+    setBudgets(updated);
+    localStorage.setItem('myBudgets', JSON.stringify(updated));
+    setIsAdding(false);
+    setNewCategory(''); setNewLimit(''); setNewSpent('');
   };
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <ScreenHeader title="New Expense" onBack={onBack} />
-      
+      <ScreenHeader title="Budget Hub" onBack={onBack} />
       <div style={{ padding: '20px' }}>
-        <div style={{
-          height: '150px',
-          border: '1px dashed #333',
-          borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          marginBottom: '20px',
-          backgroundColor: COLORS.inputBg,
-          cursor: 'pointer'
-        }}>
-          <Camera size={40} color={COLORS.secondary} />
-          <span style={{ color: COLORS.secondary, marginTop: '10px' }}>Scan or Upload Bill</span>
-        </div>
+        
+        {/* List of Budgets */}
+        {budgets.map(b => {
+          const percent = Math.min((b.spent / b.limit) * 100, 100);
+          const isOver = b.spent > b.limit;
+          
+          return (
+            <div key={b.id} style={{ 
+              backgroundColor: COLORS.card, 
+              padding: '15px', 
+              borderRadius: '12px',
+              marginBottom: '15px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <span style={{ fontWeight: 'bold' }}>{b.category}</span>
+                <span style={{ color: isOver ? COLORS.danger : COLORS.success }}>
+                  {b.spent} / {b.limit} €
+                </span>
+              </div>
+              {/* Progress Bar */}
+              <div style={{ width: '100%', height: '8px', backgroundColor: '#333', borderRadius: '4px' }}>
+                <div style={{ 
+                  width: `${percent}%`, 
+                  height: '100%', 
+                  backgroundColor: isOver ? COLORS.danger : COLORS.accent,
+                  borderRadius: '4px'
+                }} />
+              </div>
+            </div>
+          );
+        })}
 
-        <label style={{ color: COLORS.secondary, marginBottom: '8px', fontSize: '14px', display: 'block' }}>
-          Expense Name
-        </label>
-        <input 
-          type="text"
-          style={{
-            backgroundColor: COLORS.inputBg,
-            color: COLORS.primary,
-            padding: '15px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            border: '1px solid #333',
-            width: '100%',
-            fontSize: '16px',
-            outline: 'none'
-          }}
-          placeholder="e.g. Dinner at Mario's"
-          value={expenseName}
-          onChange={(e) => setExpenseName(e.target.value)}
-        />
-
-        <label style={{ color: COLORS.secondary, marginBottom: '8px', fontSize: '14px', display: 'block' }}>
-          Amount (€)
-        </label>
-        <input 
-          type="number"
-          style={{
-            backgroundColor: COLORS.inputBg,
-            color: COLORS.primary,
-            padding: '15px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            border: '1px solid #333',
-            width: '100%',
-            fontSize: '16px',
-            outline: 'none'
-          }}
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-
-        <label style={{ color: COLORS.secondary, marginBottom: '8px', fontSize: '14px', display: 'block' }}>
-          Category
-        </label>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '30px' }}>
-          {['Food', 'Transport', 'Leisure', 'Shopping'].map((cat) => (
-            <button
-              key={cat}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '20px',
-                border: `1px solid ${category === cat ? COLORS.accent : '#444'}`,
-                backgroundColor: category === cat ? COLORS.accent : 'transparent',
-                color: category === cat ? '#fff' : COLORS.secondary,
-                fontWeight: category === cat ? 'bold' : 'normal',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-              onClick={() => setCategory(cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        <button 
-          onClick={handleSave}
-          style={{
-            backgroundColor: COLORS.primary,
-            padding: '15px',
-            borderRadius: '10px',
-            border: 'none',
-            width: '100%',
-            color: '#000',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            cursor: 'pointer'
-        }}>
-          Save Expense
-        </button>
+        {/* Add New Budget Form */}
+        {isAdding ? (
+          <div style={{ backgroundColor: COLORS.card, padding: '20px', borderRadius: '12px', marginTop: '20px', border: `1px solid ${COLORS.accent}` }}>
+            <h4 style={{ marginTop: 0 }}>New Budget Goal</h4>
+            <input 
+              placeholder="Category (e.g. Shopping)" 
+              value={newCategory}
+              onChange={e => setNewCategory(e.target.value)}
+              style={styles.input}
+            />
+            <input 
+              placeholder="Budget Limit (€)" 
+              type="number"
+              value={newLimit}
+              onChange={e => setNewLimit(e.target.value)}
+              style={styles.input}
+            />
+            <input 
+              placeholder="Current Spent (€)" 
+              type="number"
+              value={newSpent}
+              onChange={e => setNewSpent(e.target.value)}
+              style={styles.input}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={handleAddBudget} style={{ ...styles.button, backgroundColor: COLORS.success }}>Save</button>
+              <button onClick={() => setIsAdding(false)} style={{ ...styles.button, backgroundColor: COLORS.danger }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button 
+            onClick={() => setIsAdding(true)}
+            style={{ ...styles.button, marginTop: '20px' }}
+          >
+            + Create New Budget
+          </button>
+        )}
       </div>
     </div>
   );
 };
 
+// --- SCREEN 3: FULL SCOPE ANALYSIS (SUBSCRIPTIONS) ---
+const FullScopeAnalysisScreen = ({ onBack }) => {
+  const [subs, setSubs] = useState([
+    { id: 1, name: 'Netflix', cost: 12.99, date: '15th', reminder: true },
+    { id: 2, name: 'Spotify', cost: 9.99, date: '28th', reminder: false },
+    { id: 3, name: 'Gym', cost: 45.00, date: '1st', reminder: true },
+  ]);
+
+  const toggleReminder = (id) => {
+    setSubs(subs.map(s => s.id === id ? { ...s, reminder: !s.reminder } : s));
+  };
+
+  return (
+    <div style={{ minHeight: '100vh' }}>
+      <ScreenHeader title="Recurring Subscriptions" onBack={onBack} />
+      <div style={{ padding: '20px' }}>
+        <p style={{ color: COLORS.secondary, fontSize: '14px', marginBottom: '20px' }}>
+          Manage your monthly recurring payments and set reminders.
+        </p>
+
+        {subs.map(sub => (
+          <div key={sub.id} style={{ 
+            backgroundColor: COLORS.card, 
+            padding: '15px', 
+            borderRadius: '12px', 
+            marginBottom: '15px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{sub.name}</div>
+              <div style={{ color: COLORS.secondary, fontSize: '13px' }}>Due: {sub.date} • €{sub.cost}</div>
+            </div>
+            
+            <button 
+              onClick={() => toggleReminder(sub.id)}
+              style={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                background: 'none', 
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <Bell size={20} fill={sub.reminder ? COLORS.warning : 'none'} color={sub.reminder ? COLORS.warning : COLORS.secondary} />
+              <span style={{ fontSize: '10px', color: sub.reminder ? COLORS.warning : COLORS.secondary, marginTop: '4px' }}>
+                {sub.reminder ? 'On' : 'Off'}
+              </span>
+            </button>
+          </div>
+        ))}
+
+        <div style={{ marginTop: '30px', padding: '15px', backgroundColor: '#1F1F22', borderRadius: '8px' }}>
+          <h4 style={{ margin: '0 0 10px 0', color: COLORS.primary }}>Total Monthly Fixed</h4>
+          <p style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>
+            € {subs.reduce((acc, curr) => acc + curr.cost, 0).toFixed(2)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- SCREEN 4: ANNUAL OVERVIEW (ENHANCED) ---
+const AnnualOverviewScreen = ({ onBack }) => {
+  const [totalSpent, setTotalSpent] = useState(0);
+  
+  useEffect(() => {
+    const savedExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
+    const sum = savedExpenses.reduce((acc, current) => acc + current.amount, 0);
+    setTotalSpent(sum);
+  }, []);
+
+  // Mock data for Category Breakdown
+  const categories = [
+    { name: 'Food', amount: 450, color: COLORS.accent },
+    { name: 'Transport', amount: 120, color: COLORS.success },
+    { name: 'Bills', amount: 300, color: COLORS.warning },
+    { name: 'Other', amount: 80, color: COLORS.secondary },
+  ];
+
+  const maxCat = Math.max(...categories.map(c => c.amount));
+
+  return (
+    <div style={{ minHeight: '100vh' }}>
+      <ScreenHeader title="Annual Overview" onBack={onBack} />
+      
+      <div style={{ padding: '20px' }}>
+        {/* Main Trend Chart */}
+        <div style={{
+          padding: '20px',
+          backgroundColor: COLORS.card,
+          borderRadius: '16px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ color: COLORS.primary, fontSize: '16px', margin: '0 0 10px 0' }}>Spending Trend (6 Mo)</h3>
+          <div style={{ display: 'flex', alignItems: 'flex-end', height: '150px', gap: '8px', justifyContent: 'space-between' }}>
+            {[40, 65, 30, 85, 50, 70].map((h, i) => (
+              <div key={i} style={{ width: '30px', height: `${h}%`, backgroundColor: COLORS.accent, borderRadius: '4px' }} />
+            ))}
+          </div>
+        </div>
+
+        {/* Category Level Graphs (New Feature) */}
+        <h3 style={{ fontSize: '18px', marginBottom: '15px' }}>Category Breakdown</h3>
+        <div style={{ backgroundColor: COLORS.card, borderRadius: '16px', padding: '20px' }}>
+          {categories.map((cat, i) => (
+            <div key={i} style={{ marginBottom: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', fontSize: '14px' }}>
+                <span>{cat.name}</span>
+                <span>€{cat.amount}</span>
+              </div>
+              <div style={{ width: '100%', height: '8px', backgroundColor: '#333', borderRadius: '4px' }}>
+                <div style={{ 
+                  width: `${(cat.amount / maxCat) * 100}%`, 
+                  height: '100%', 
+                  backgroundColor: cat.color, 
+                  borderRadius: '4px' 
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <p style={{ color: COLORS.secondary }}>Total Year-to-Date</p>
+          <p style={{ fontSize: '28px', fontWeight: 'bold' }}>€ {totalSpent.toFixed(2)}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- SCREEN 5: WEEKLY VARIABLES ---
 const WeeklyVariablesScreen = ({ onBack }) => {
   const [variables, setVariables] = useState(() => {
     const saved = localStorage.getItem('weeklyVariables');
@@ -334,14 +428,11 @@ const WeeklyVariablesScreen = ({ onBack }) => {
       { id: 1, label: 'Groceries', amount: '150.00' },
       { id: 2, label: 'Transport', amount: '50.00' },
       { id: 3, label: 'Entertainment', amount: '100.00' },
-      { id: 4, label: 'Coffee/Snacks', amount: '25.00' },
     ];
   });
 
   const handleChange = (id, text) => {
-    setVariables(variables.map(item => 
-      item.id === id ? { ...item, amount: text } : item
-    ));
+    setVariables(variables.map(item => item.id === id ? { ...item, amount: text } : item));
   };
 
   const handleSave = () => {
@@ -353,252 +444,150 @@ const WeeklyVariablesScreen = ({ onBack }) => {
   return (
     <div style={{ minHeight: '100vh' }}>
       <ScreenHeader title="Weekly Variables" onBack={onBack} />
-      
       <div style={{ padding: '20px' }}>
-        <p style={{ color: COLORS.secondary, marginBottom: '20px', fontSize: '14px' }}>
-          Adjust your expected weekly spending limits here.
-        </p>
-
         {variables.map((item) => (
           <div key={item.id} style={{ marginBottom: '20px' }}>
-            <label style={{ color: COLORS.secondary, marginBottom: '8px', fontSize: '14px', display: 'block' }}>
-              {item.label} (€)
-            </label>
+            <label style={{ color: COLORS.secondary, marginBottom: '8px', display: 'block' }}>{item.label} (€)</label>
             <input 
               type="number"
               value={item.amount}
               onChange={(e) => handleChange(item.id, e.target.value)}
-              style={{
-                backgroundColor: COLORS.inputBg,
-                color: COLORS.primary,
-                padding: '15px',
-                borderRadius: '8px',
-                border: '1px solid #333',
-                width: '100%',
-                fontSize: '16px',
-                outline: 'none'
-              }}
+              style={styles.input}
             />
           </div>
         ))}
-
-        <button 
-          onClick={handleSave}
-          style={{
-            backgroundColor: COLORS.accent,
-            padding: '15px',
-            borderRadius: '10px',
-            border: 'none',
-            width: '100%',
-            color: '#FFF',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            marginTop: '10px',
-            cursor: 'pointer'
-        }}>
-          Save Changes
-        </button>
+        <button onClick={handleSave} style={styles.button}>Save Changes</button>
       </div>
     </div>
   );
 };
 
-const AnnualOverviewScreen = ({ onBack }) => {
-  const [totalSpent, setTotalSpent] = useState(0);
+// --- SCREEN 6: NEW EXPENSE ---
+const NewFlexibleExpenseScreen = ({ onBack }) => {
+  const [category, setCategory] = useState('Food');
+  const [expenseName, setExpenseName] = useState('');
+  const [amount, setAmount] = useState('');
   
-  useEffect(() => {
-    const savedExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
-    const sum = savedExpenses.reduce((acc, current) => acc + current.amount, 0);
-    setTotalSpent(sum);
-  }, []);
-
-  const chartData = [40, 65, 30, 85, 50, 70];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const handleSave = () => {
+    if (!expenseName || !amount) { alert("Please enter a name and amount!"); return; }
+    const newExpense = {
+      id: Date.now(),
+      name: expenseName,
+      amount: parseFloat(amount),
+      category: category,
+      date: new Date().toLocaleDateString()
+    };
+    const existing = JSON.parse(localStorage.getItem('myExpenses') || '[]');
+    localStorage.setItem('myExpenses', JSON.stringify([...existing, newExpense]));
+    alert(`Saved: ${expenseName} for €${amount}`);
+    onBack();
+  };
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <ScreenHeader title="Annual Overview" onBack={onBack} />
-      
-      <div style={{
-        margin: '20px',
-        padding: '20px',
-        backgroundColor: COLORS.card,
-        borderRadius: '16px'
-      }}>
-        <h3 style={{ color: COLORS.primary, fontSize: '16px', fontWeight: 'bold', margin: '0 0 5px 0' }}>
-          Spending Trend
-        </h3>
-        <p style={{ color: COLORS.secondary, fontSize: '12px', marginBottom: '20px' }}>
-          Last 6 Months
-        </p>
-        
+      <ScreenHeader title="New Expense" onBack={onBack} />
+      <div style={{ padding: '20px' }}>
         <div style={{
+          height: '150px',
+          border: '1px dashed #333',
+          borderRadius: '12px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          height: '200px',
-          gap: '8px'
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '20px',
+          backgroundColor: COLORS.inputBg
         }}>
-          {chartData.map((h, i) => (
-            <div key={i} style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              flex: 1
-            }}>
-              <div style={{
-                width: '100%',
-                maxWidth: '40px',
-                height: `${h * 2}px`,
-                backgroundColor: h > 60 ? COLORS.danger : COLORS.accent,
-                borderRadius: '6px',
-                marginBottom: '8px'
-              }} />
-              <span style={{ color: COLORS.secondary, fontSize: '12px' }}>{months[i]}</span>
-            </div>
+          <Camera size={40} color={COLORS.secondary} />
+          <span style={{ color: COLORS.secondary, marginTop: '10px' }}>Scan Bill</span>
+        </div>
+        <input placeholder="Expense Name" value={expenseName} onChange={e => setExpenseName(e.target.value)} style={styles.input} />
+        <input placeholder="Amount (€)" type="number" value={amount} onChange={e => setAmount(e.target.value)} style={styles.input} />
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          {['Food', 'Transport', 'Leisure', 'Shop'].map(cat => (
+            <button key={cat} onClick={() => setCategory(cat)} style={{
+              ...styles.chip,
+              backgroundColor: category === cat ? COLORS.accent : 'transparent',
+              border: `1px solid ${category === cat ? COLORS.accent : '#444'}`
+            }}>{cat}</button>
           ))}
         </div>
-      </div>
-
-      <div style={{
-        margin: '0 20px',
-        padding: '20px',
-        backgroundColor: '#1F1F22',
-        borderRadius: '12px',
-        textAlign: 'center'
-      }}>
-        <p style={{ color: COLORS.secondary, fontSize: '14px', margin: 0 }}>Year to Date</p>
-        
-        <p style={{ color: COLORS.primary, fontSize: '24px', fontWeight: 'bold', margin: '5px 0 0 0' }}>
-          € {totalSpent.toFixed(2)}
-        </p>
+        <button onClick={handleSave} style={styles.button}>Save Expense</button>
       </div>
     </div>
   );
 };
 
+// --- HELPERS & STYLES ---
 const ScreenHeader = ({ title, onBack }) => (
-  <div style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '50px 20px 20px',
-    backgroundColor: COLORS.card
-  }}>
-    <button 
-      onClick={onBack}
-      style={{
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '5px',
-        display: 'flex',
-        alignItems: 'center'
-      }}
-    >
-      <ArrowLeft size={24} color={COLORS.primary} />
-    </button>
-    <span style={{ color: COLORS.primary, fontSize: '18px', fontWeight: '600' }}>{title}</span>
+  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '50px 20px 20px', backgroundColor: COLORS.card }}>
+    <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><ArrowLeft size={24} color={COLORS.primary} /></button>
+    <span style={{ fontSize: '18px', fontWeight: '600' }}>{title}</span>
     <div style={{ width: '24px' }} />
   </div>
 );
 
-const PlaceholderScreen = ({ title, onBack }) => (
-  <div style={{ minHeight: '100vh' }}>
-    <ScreenHeader title={title} onBack={onBack} />
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '50vh'
-    }}>
-      <span style={{ color: COLORS.secondary }}>Feature coming soon</span>
-    </div>
-  </div>
-);
-
 const MenuItem = ({ icon, label, onPress }) => (
-  <button
-    onClick={onPress}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '15px',
-      marginBottom: '25px',
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      padding: 0,
-      width: '100%',
-      textAlign: 'left'
-    }}
-  >
-    {icon}
-    <span style={{ color: COLORS.secondary, fontSize: '16px', fontWeight: '500' }}>{label}</span>
+  <button onClick={onPress} style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px', background: 'none', border: 'none', cursor: 'pointer', width: '100%' }}>
+    {icon} <span style={{ color: COLORS.secondary, fontSize: '16px' }}>{label}</span>
   </button>
 );
 
 const Accordion = ({ title, isOpen, onToggle, children }) => (
   <div style={{ marginBottom: '15px' }}>
-    <button
-      onClick={onToggle}
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        marginBottom: '15px',
-        padding: 0
-      }}
-    >
-      <span style={{
-        color: isOpen ? COLORS.primary : COLORS.secondary,
-        fontSize: '16px',
-        fontWeight: '500'
-      }}>
-        {title}
-      </span>
+    <button onClick={onToggle} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '15px' }}>
+      <span style={{ color: isOpen ? COLORS.primary : COLORS.secondary, fontSize: '16px' }}>{title}</span>
       {isOpen ? <ChevronUp size={24} color={COLORS.secondary} /> : <ChevronDown size={24} color={COLORS.secondary} />}
     </button>
-    {isOpen && (
-      <div style={{
-        backgroundColor: COLORS.card,
-        borderRadius: '12px',
-        padding: '10px',
-        marginBottom: '10px',
-        borderLeft: `2px solid ${COLORS.cardBorder}`
-      }}>
-        {children}
-      </div>
-    )}
+    {isOpen && <div style={{ backgroundColor: COLORS.card, borderRadius: '12px', padding: '10px', borderLeft: `2px solid ${COLORS.cardBorder}` }}>{children}</div>}
   </div>
 );
 
 const SubMenuItem = ({ label, highlight, onPress }) => (
-  <button
-    onClick={onPress}
-    style={{
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '12px 10px',
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      width: '100%',
-      textAlign: 'left'
-    }}
-  >
-    <span style={{
-      color: highlight ? COLORS.primary : COLORS.secondary,
-      fontSize: '14px',
-      fontWeight: highlight ? '600' : 'normal'
-    }}>
-      {label}
-    </span>
+  <button onClick={onPress} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 10px', background: 'none', border: 'none', cursor: 'pointer', width: '100%' }}>
+    <span style={{ color: highlight ? COLORS.primary : COLORS.secondary, fontWeight: highlight ? '600' : 'normal' }}>{label}</span>
     {highlight && <ChevronRight size={16} color={COLORS.secondary} />}
   </button>
 );
+
+const PlaceholderScreen = ({ title, onBack }) => (
+  <div style={{ minHeight: '100vh' }}>
+    <ScreenHeader title={title} onBack={onBack} />
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+      <span style={{ color: COLORS.secondary }}>Feature coming soon</span>
+    </div>
+  </div>
+);
+
+const styles = {
+  input: {
+    backgroundColor: COLORS.inputBg,
+    color: COLORS.primary,
+    padding: '15px',
+    borderRadius: '8px',
+    marginBottom: '15px',
+    border: '1px solid #333',
+    width: '100%',
+    fontSize: '16px',
+    outline: 'none',
+    boxSizing: 'border-box'
+  },
+  button: {
+    backgroundColor: COLORS.accent,
+    padding: '15px',
+    borderRadius: '10px',
+    border: 'none',
+    width: '100%',
+    color: '#FFF',
+    fontWeight: 'bold',
+    fontSize: '16px',
+    cursor: 'pointer'
+  },
+  chip: {
+    padding: '8px 16px',
+    borderRadius: '20px',
+    color: '#fff',
+    cursor: 'pointer',
+    fontSize: '12px'
+  }
+};
