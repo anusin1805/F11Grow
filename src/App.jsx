@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -197,41 +197,34 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
   const [category, setCategory] = useState('Food');
   const [expenseName, setExpenseName] = useState('');
   const [amount, setAmount] = useState('');
-
+  
   const handleSave = () => {
-    // 1. Validation: Don't save if empty
     if (!expenseName || !amount) {
       alert("Please enter a name and amount!");
       return;
     }
-  // 2. Create the expense object
+
     const newExpense = {
-      id: Date.now(), // Unique ID based on time
+      id: Date.now(),
       name: expenseName,
       amount: parseFloat(amount),
       category: category,
       date: new Date().toLocaleDateString()
     };
 
-    // 3. Save to Local Storage (Browser Memory)
-    // Get existing expenses or start with empty list
     const existingExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
-    // Add new expense to the list
     const updatedExpenses = [...existingExpenses, newExpense];
-    // Save back to storage
     localStorage.setItem('myExpenses', JSON.stringify(updatedExpenses));
 
-    // 4. Success feedback
     alert(`Saved: ${expenseName} for €${amount}`);
-    onBack(); // Go back to menu
+    onBack();
   };
-  // -------------------------------------
+
   return (
     <div style={{ minHeight: '100vh' }}>
       <ScreenHeader title="New Expense" onBack={onBack} />
       
       <div style={{ padding: '20px' }}>
-        {/* Bill Upload Area */}
         <div style={{
           height: '150px',
           border: '1px dashed #333',
@@ -248,7 +241,6 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
           <span style={{ color: COLORS.secondary, marginTop: '10px' }}>Scan or Upload Bill</span>
         </div>
 
-        {/* Form Fields */}
         <label style={{ color: COLORS.secondary, marginBottom: '8px', fontSize: '14px', display: 'block' }}>
           Expense Name
         </label>
@@ -315,16 +307,18 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
           ))}
         </div>
 
-        <button style={{
-          backgroundColor: COLORS.primary,
-          padding: '15px',
-          borderRadius: '10px',
-          border: 'none',
-          width: '100%',
-          color: '#000',
-          fontWeight: 'bold',
-          fontSize: '16px',
-          cursor: 'pointer'
+        <button 
+          onClick={handleSave}
+          style={{
+            backgroundColor: COLORS.primary,
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+            width: '100%',
+            color: '#000',
+            fontWeight: 'bold',
+            fontSize: '16px',
+            cursor: 'pointer'
         }}>
           Save Expense
         </button>
@@ -334,18 +328,26 @@ const NewFlexibleExpenseScreen = ({ onBack }) => {
 };
 
 const WeeklyVariablesScreen = ({ onBack }) => {
-  // Initial state with some default weekly budget items
-  const [variables, setVariables] = useState([
-    { id: 1, label: 'Groceries', amount: '150.00' },
-    { id: 2, label: 'Transport', amount: '50.00' },
-    { id: 3, label: 'Entertainment', amount: '100.00' },
-    { id: 4, label: 'Coffee/Snacks', amount: '25.00' },
-  ]);
+  const [variables, setVariables] = useState(() => {
+    const saved = localStorage.getItem('weeklyVariables');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, label: 'Groceries', amount: '150.00' },
+      { id: 2, label: 'Transport', amount: '50.00' },
+      { id: 3, label: 'Entertainment', amount: '100.00' },
+      { id: 4, label: 'Coffee/Snacks', amount: '25.00' },
+    ];
+  });
 
   const handleChange = (id, text) => {
     setVariables(variables.map(item => 
       item.id === id ? { ...item, amount: text } : item
     ));
+  };
+
+  const handleSave = () => {
+    localStorage.setItem('weeklyVariables', JSON.stringify(variables));
+    alert("Weekly budget updated successfully!");
+    onBack();
   };
 
   return (
@@ -380,17 +382,19 @@ const WeeklyVariablesScreen = ({ onBack }) => {
           </div>
         ))}
 
-        <button style={{
-          backgroundColor: COLORS.accent,
-          padding: '15px',
-          borderRadius: '10px',
-          border: 'none',
-          width: '100%',
-          color: '#FFF',
-          fontWeight: 'bold',
-          fontSize: '16px',
-          marginTop: '10px',
-          cursor: 'pointer'
+        <button 
+          onClick={handleSave}
+          style={{
+            backgroundColor: COLORS.accent,
+            padding: '15px',
+            borderRadius: '10px',
+            border: 'none',
+            width: '100%',
+            color: '#FFF',
+            fontWeight: 'bold',
+            fontSize: '16px',
+            marginTop: '10px',
+            cursor: 'pointer'
         }}>
           Save Changes
         </button>
@@ -400,26 +404,17 @@ const WeeklyVariablesScreen = ({ onBack }) => {
 };
 
 const AnnualOverviewScreen = ({ onBack }) => {
-  const data = [40, 65, 30, 85, 50, 70];
   const [totalSpent, setTotalSpent] = useState(0);
   
-  // 2. Load data when the screen opens
-  React.useEffect(() => {
-    // Get the list from memory
+  useEffect(() => {
     const savedExpenses = JSON.parse(localStorage.getItem('myExpenses') || '[]');
-    
-    // Calculate the sum of all amounts
     const sum = savedExpenses.reduce((acc, current) => acc + current.amount, 0);
-    
-    // Update the state
     setTotalSpent(sum);
   }, []);
-   
-  // Placeholder data for the chart (visual only for now)
+
   const chartData = [40, 65, 30, 85, 50, 70];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-  
-  
+
   return (
     <div style={{ minHeight: '100vh' }}>
       <ScreenHeader title="Annual Overview" onBack={onBack} />
@@ -437,7 +432,6 @@ const AnnualOverviewScreen = ({ onBack }) => {
           Last 6 Months
         </p>
         
-        {/* Chart Bars */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -466,7 +460,6 @@ const AnnualOverviewScreen = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Dynamic Total Display */}
       <div style={{
         margin: '0 20px',
         padding: '20px',
@@ -476,7 +469,6 @@ const AnnualOverviewScreen = ({ onBack }) => {
       }}>
         <p style={{ color: COLORS.secondary, fontSize: '14px', margin: 0 }}>Year to Date</p>
         
-        {/* THIS SHOWS YOUR REAL TOTAL NOW */}
         <p style={{ color: COLORS.primary, fontSize: '24px', fontWeight: 'bold', margin: '5px 0 0 0' }}>
           € {totalSpent.toFixed(2)}
         </p>
@@ -484,6 +476,7 @@ const AnnualOverviewScreen = ({ onBack }) => {
     </div>
   );
 };
+
 const ScreenHeader = ({ title, onBack }) => (
   <div style={{
     display: 'flex',
